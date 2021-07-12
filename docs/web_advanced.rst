@@ -436,7 +436,7 @@ the keyword-only ``middlewares`` parameter::
 
 Internally, a single :ref:`request handler <aiohttp-web-handler>` is constructed
 by applying the middleware chain to the original handler in reverse order,
-and is called by the :class:`RequestHandler` as a regular *handler*.
+and is called by the :class:`~aiohttp.web.RequestHandler` as a regular *handler*.
 
 Since *middlewares* are themselves coroutines, they may perform extra
 ``await`` calls when creating a new handler, e.g. call database etc.
@@ -537,7 +537,8 @@ For example, a middleware can only change HTTP headers for *unprepared*
 responses (see :meth:`StreamResponse.prepare`), but sometimes we
 need a hook for changing HTTP headers for streamed responses and WebSockets.
 This can be accomplished by subscribing to the
-:attr:`Application.on_response_prepare` signal::
+:attr:`Application.on_response_prepare` signal, which is called after default
+headers have been computed and directly before headers are sent::
 
     async def on_prepare(request, response):
         response.headers['My-Header'] = 'value'
@@ -747,7 +748,7 @@ header::
 Custom resource implementation
 ------------------------------
 
-To register custom resource use :meth:`UrlDispatcher.register_resource`.
+To register custom resource use :meth:`~aiohttp.web.UrlDispatcher.register_resource`.
 Resource instance must implement `AbstractResource` interface.
 
 .. _aiohttp-web-app-runners:
@@ -848,9 +849,9 @@ sources (e.g. ZeroMQ, Redis Pub/Sub, AMQP, etc.) to react to received messages
 within the application.
 
 For example the background task could listen to ZeroMQ on
-:data:`zmq.SUB` socket, process and forward retrieved messages to
+``zmq.SUB`` socket, process and forward retrieved messages to
 clients connected via WebSocket that are stored somewhere in the
-application (e.g. in the :obj:`application['websockets']` list).
+application (e.g. in the ``application['websockets']`` list).
 
 To run such short and long running background tasks aiohttp provides an
 ability to register :attr:`Application.on_startup` signal handler(s) that
@@ -892,7 +893,7 @@ signal handlers as shown in the example below::
   web.run_app(app)
 
 
-The task :func:`listen_to_redis` will run forever.
+The task ``listen_to_redis`` will run forever.
 To shut it down correctly :attr:`Application.on_cleanup` signal handler
 may be used to send a cancellation to it.
 
@@ -993,10 +994,10 @@ Install with ``pip``:
 
     $ pip install aiohttp-devtools
 
-   * ``runserver`` provides a development server with auto-reload,
-  live-reload, static file serving and aiohttp_debugtoolbar_
+* ``runserver`` provides a development server with auto-reload,
+  live-reload, static file serving and `aiohttp-debugtoolbar`_
   integration.
-   * ``start`` is a `cookiecutter command which does the donkey work
+* ``start`` is a `cookiecutter command which does the donkey work
   of creating new :mod:`aiohttp.web` Applications.
 
 Documentation and a complete tutorial of creating and running an app

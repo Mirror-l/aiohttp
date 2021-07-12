@@ -19,17 +19,23 @@ Let's get started with some simple examples.
 Make a Request
 ==============
 
-Begin by importing the aiohttp module::
+Begin by importing the aiohttp module, and asyncio::
 
     import aiohttp
+    import asyncio
 
 Now, let's try to get a web-page. For example let's query
 ``http://httpbin.org/get``::
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get('http://httpbin.org/get') as resp:
-            print(resp.status)
-            print(await resp.text())
+    async def main():
+        async with aiohttp.ClientSession() as session:
+            async with session.get('http://httpbin.org/get') as resp:
+                print(resp.status)
+                print(await resp.text())
+
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
 
 Now, we have a :class:`ClientSession` called ``session`` and a
 :class:`ClientResponse` object called ``resp``. We can get all the
@@ -88,14 +94,14 @@ following code::
     params = {'key1': 'value1', 'key2': 'value2'}
     async with session.get('http://httpbin.org/get',
                            params=params) as resp:
-        expect = 'http://httpbin.org/get?key2=value2&key1=value1'
+        expect = 'http://httpbin.org/get?key1=value1&key2=value2'
         assert str(resp.url) == expect
 
 You can see that the URL has been correctly encoded by printing the URL.
 
 For sending data with multiple values for the same key
-:class:`MultiDict` may be used as well.
-
+:class:`~multidict.MultiDict` may be used; the library support nested lists
+(``{'key': ['value1', 'value2']}``) alternative as well.
 
 It is also possible to pass a list of 2 item tuples as parameters, in
 that case you can specify multiple values for each key::
@@ -312,7 +318,7 @@ You can set the ``filename`` and ``content_type`` explicitly::
     await session.post(url, data=data)
 
 If you pass a file object as data parameter, aiohttp will stream it to
-the server automatically. Check :class:`~aiohttp.streams.StreamReader`
+the server automatically. Check :class:`~aiohttp.StreamReader`
 for supported format information.
 
 .. seealso:: :ref:`aiohttp-multipart`
@@ -438,3 +444,20 @@ Thus the default timeout is::
 
    aiohttp.ClientTimeout(total=5*60, connect=None,
                          sock_connect=None, sock_read=None)
+
+.. note::
+
+   *aiohttp* **ceils** timeout if the value is equal or greater than 5
+   seconds. The timeout expires at the next integer second greater than
+   ``current_time + timeout``.
+
+   The ceiling is done for the sake of optimization, when many concurrent tasks
+   are scheduled to wake-up at the almost same but different absolute times. It
+   leads to very many event loop wakeups, which kills performance.
+
+   The optimization shifts absolute wakeup times by scheduling them to exactly
+   the same time as other neighbors, the loop wakes up once-per-second for
+   timeout expiration.
+
+   Smaller timeouts are not rounded to help testing; in the real life network
+   timeouts usually greater than tens of seconds.
